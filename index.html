@@ -1,0 +1,351 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metaverse & Web3 Trend Tracker with Filters</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* Very dark background */
+            color: #e2e8f0; /* Light text color for readability */
+        }
+        .container {
+            max-width: 960px;
+            background-color: #003E1C; /* Dark green main container */
+            color: #e2e8f0; /* Light text color */
+        }
+        .header h1, .filter-section h2 {
+            color: #F89895; /* Light pink/coral for main headings */
+        }
+        .text-gray-600 { /* For sub-headings and descriptions */
+            color: #cbd5e0; /* Lighter grey for contrast */
+        }
+        .result-card {
+            border: 1px solid #141414; /* Darker border */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Stronger shadow on dark bg */
+            transition: transform 0.2s ease-in-out;
+            background-color: #002B13; /* Slightly lighter green for cards */
+        }
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        .result-card h3 {
+            color: #F89895; /* Pink/coral for card titles */
+        }
+        .result-card p {
+            color: #cbd5e0; /* Light text for summaries */
+        }
+        .result-card a {
+            color: #F89895; /* Pink/coral for links */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(248, 152, 149, 0.3); /* Pink/coral translucent */
+            border-left-color: #F89895; /* Pink/coral solid */
+        }
+        .fetch-button { /* Renamed from .search-button */
+            background-color: #F89895; /* Pink/coral button */
+            color: #003E1C; /* Dark green text on button */
+        }
+        .fetch-button:hover { /* Renamed from .search-button */
+            background-color: #f77f7c; /* Slightly darker pink/coral on hover */
+        }
+        .filter-section {
+            background-color: #00200D; /* Very dark green for filter background */
+        }
+        .filter-group label {
+            color: #F89895; /* Pink/coral for filter labels */
+        }
+        .filter-group input, .filter-group select {
+            background-color: #141414; /* Dark input backgrounds */
+            border: 1px solid #003E1C; /* Dark green border */
+            color: #e2e8f0; /* Light text in inputs */
+        }
+        .filter-group input:focus, .filter-group select:focus {
+            border-color: #F89895; /* Pink/coral focus border */
+            box-shadow: 0 0 0 1px #F89895; /* Pink/coral focus ring */
+        }
+        .disclaimer {
+            color: #a0aec0; /* Slightly muted light gray for disclaimer */
+            border-top: 1px solid #002B13; /* Darker green border */
+        }
+        .text-blue-600 { /* For general links like "Fetching trends..." - keeping this as it's used in JS */
+            color: #F89895;
+        }
+
+        /* Filter layout adjustments */
+        .filter-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem; /* Space between rows */
+            flex-wrap: wrap; /* Allows items to wrap on smaller screens */
+        }
+        .filter-item {
+            flex: 1; /* Allows items to grow and shrink */
+            min-width: 150px; /* Minimum width before wrapping */
+        }
+        /* Ensure inputs take full width of their item container */
+        .filter-item input, .filter-item select {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="container mx-auto p-8 rounded-xl shadow-lg">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold mb-2">Metaverse & Web3 Trend Tracker</h1>
+            <p class="text-lg">Get summarized news from across the virtual world, blockchain, and AI industries.</p>
+        </header>
+
+        <!-- Filter Section -->
+        <section class="filter-section mb-8 p-6 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold mb-4">Filters</h2>
+            <div class="filter-group">
+                <!-- First Row: Dates -->
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label for="dateFrom">Date From:</label>
+                        <input type="date" id="dateFrom">
+                    </div>
+                    <div class="filter-item">
+                        <label for="dateUntil">Date Until:</label>
+                        <input type="date" id="dateUntil">
+                    </div>
+                </div>
+                <!-- Second Row: Category and Company/Project -->
+                <div class="filter-row">
+                    <div class="filter-item">
+                        <label for="category">Category:</label>
+                        <select id="category">
+                            <option value="">All Categories</option>
+                            <option value="AI">AI</option>
+                            <option value="Blockchain Gaming">Blockchain Gaming</option>
+                            <option value="Metaverse Platforms">Metaverse Platforms</option>
+                            <option value="UGC">UGC (User-Generated Content)</option>
+                            <option value="Development">Development</option>
+                            <option value="Economy">Economy</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="companyProject">Company/Project:</label>
+                        <input type="text" id="companyProject" placeholder="e.g., The Sandbox, Meta">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="flex justify-center mb-8">
+            <button id="fetchTrendsBtn"
+                    class="fetch-button font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-opacity-75 focus:ring-[#F89895]">
+                Fetch Latest Insights
+            </button>
+        </div>
+
+        <div id="loadingIndicator" class="hidden flex justify-center items-center mb-6">
+            <div class="loading-spinner"></div>
+            <p class="ml-3">Fetching trends, please wait...</p>
+        </div>
+
+        <div id="resultsContainer" class="space-y-6">
+            </div>
+
+        <div id="errorMessage" class="hidden text-red-400 text-center mt-6">
+            <p>An error occurred while fetching trends. Please try again later.</p>
+        </div>
+
+        <div class="disclaimer">
+            <p><strong>Disclaimer:</strong> This content is generated by an AI model based on publicly available information. While efforts are made for accuracy, please double-check all information and conduct your own research (DYOR) as needed before making any decisions.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fetchTrendsBtn = document.getElementById('fetchTrendsBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Filter elements
+            const dateFromInput = document.getElementById('dateFrom');
+            const dateUntilInput = document.getElementById('dateUntil');
+            const categorySelect = document.getElementById('category');
+            const companyProjectInput = document.getElementById('companyProject');
+
+            // Simulated data to display, as a backend is required for real fetching/summarization
+            // Added 'date', 'category', 'companies', 'source', 'sourceUrl' properties
+            const simulatedResults = [
+                {
+                    title: "AI's Growing Role in Metaverse Design & Asset Creation",
+                    summary: "Recent reports highlight significant advancements in AI tools for automated asset generation and intelligent NPC behavior within virtual worlds, promising to lower creation barriers. This trend is expected to accelerate metaverse development.",
+                    url: "https://www.bloomberg.com/news/articles/ai-metaverse-report-june-2025",
+                    date: "2025-06-15",
+                    category: "AI",
+                    companies: ["Meta", "Unity"],
+                    source: "Bloomberg",
+                    sourceUrl: "https://www.bloomberg.com"
+                },
+                {
+                    title: "P2E Models Evolve Towards Sustainable Economies in Blockchain Gaming",
+                    summary: "The blockchain gaming sector is seeing a crucial shift from pure 'play-to-earn' to more sustainable 'play-and-own' or 'play-to-enjoy-and-earn' models, with a stronger focus on intrinsic game fun and long-term player retention over speculative earning.",
+                    url: "https://www.coindesk.com/web3/gaming-economy-shift-2025",
+                    date: "2025-06-10",
+                    category: "Blockchain Gaming",
+                    companies: ["Axie Infinity", "Immutable X"],
+                    source: "CoinDesk",
+                    sourceUrl: "https://www.coindesk.com"
+                },
+                {
+                    title: "The Sandbox Announces Major Mobile & Creator Tool Updates for Q3 2025",
+                    summary: "The Sandbox revealed plans for significant mobile platform enhancements and new features for its Game Maker and VoxEdit tools, aiming to boost user accessibility and content creation capabilities by late 2025.",
+                    url: "https://www.sandbox.game/blog/q3-2025-roadmap-update",
+                    date: "2025-06-01",
+                    category: "Metaverse Platforms",
+                    companies: ["The Sandbox"],
+                    source: "The Sandbox Blog",
+                    sourceUrl: "https://www.sandbox.game"
+                },
+                {
+                    title: "Decentraland Community Debates Governance Changes for LAND Use",
+                    summary: "Discussions within the Decentraland DAO and on its X (Twitter) community highlight ongoing debates about proposed governance changes affecting virtual LAND parcel usage and monetization, indicating active community participation in platform evolution.",
+                    url: "https://twitter.com/decentraland/status/1234567890", // Example Twitter link
+                    date: "2025-05-28",
+                    category: "Metaverse Platforms",
+                    companies: ["Decentraland"],
+                    source: "X (Twitter)",
+                    sourceUrl: "https://twitter.com/decentraland"
+                },
+                {
+                    title: "Meta's Horizon Worlds Sees Increased Enterprise Adoption for Training",
+                    summary: "While consumer adoption grows steadily, Meta's Horizon Worlds is reportedly gaining traction for enterprise use cases, particularly in virtual training and corporate collaboration spaces, signaling a diversified strategy.",
+                    url: "https://techcrunch.com/2025/05/20/meta-horizon-enterprise-training/",
+                    date: "2025-05-20",
+                    category: "Metaverse Platforms",
+                    companies: ["Meta"],
+                    source: "TechCrunch",
+                    sourceUrl: "https://techcrunch.com"
+                },
+                {
+                    title: "New L2 Chain 'GameFlow' Launched for NFT Gaming",
+                    summary: "A new Layer 2 blockchain, 'GameFlow,' has officially launched, promising ultra-low gas fees and high throughput specifically optimized for NFT-based gaming, attracting several new game studios to its ecosystem.",
+                    url: "https://www.theblock.co/post/298765/gameflow-l2-launch-nft-gaming",
+                    date: "2025-06-05",
+                    category: "Blockchain Gaming",
+                    companies: ["GameFlow"],
+                    source: "The Block",
+                    sourceUrl: "https://www.theblockcrypto.com"
+                },
+                 {
+                    title: "AI-Powered NPCs Elevate Immersion in UGC Experiences",
+                    summary: "Developers are increasingly leveraging advanced AI models to create more dynamic and responsive Non-Player Characters (NPCs) in user-generated content (UGC) games, enhancing narrative depth and player interaction.",
+                    url: "https://gamedeveloper.com/news/ai-npcs-ugc-immersion",
+                    date: "2025-06-12",
+                    category: "UGC",
+                    companies: ["Roblox", "Fortnite"],
+                    source: "Game Developer",
+                    sourceUrl: "https://www.gamedeveloper.com"
+                },
+                {
+                    title: "The Sandbox Partnership with a Major Music Label for Virtual Concerts",
+                    summary: "The Sandbox announced a strategic partnership with 'Melody Records,' a prominent music label, to host a series of exclusive virtual concerts and music-themed experiences within its metaverse throughout 2025.",
+                    url: "https://www.sandbox.game/blog/melody-records-partnership",
+                    date: "2025-05-18",
+                    category: "Metaverse Platforms",
+                    companies: ["The Sandbox"],
+                    source: "The Sandbox Blog",
+                    sourceUrl: "https://www.sandbox.game"
+                }
+            ];
+
+
+            fetchTrendsBtn.addEventListener('click', async () => {
+                resultsContainer.innerHTML = ''; // Clear previous results
+                errorMessage.classList.add('hidden');
+                loadingIndicator.classList.remove('hidden');
+                fetchTrendsBtn.disabled = true; // Disable button during fetch
+
+                try {
+                    // --- IMPORTANT: This is a conceptual fetch to a hypothetical backend ---
+                    // As explained before, this fetch call is a placeholder.
+                    // It will attempt to call a dummy URL to prevent "Failed to parse URL" errors
+                    // in preview environments, but it will NOT fetch real data.
+                    // The 'catch' block will then display the simulated results,
+                    // filtered based on user input.
+
+                    // In a real application, filters would be sent to your backend like this:
+                    const filters = {
+                        dateFrom: dateFromInput.value ? new Date(dateFromInput.value) : null,
+                        dateUntil: dateUntilInput.value ? new Date(dateUntilInput.value) : null,
+                        category: categorySelect.value.toLowerCase(),
+                        companyProject: companyProjectInput.value.toLowerCase(),
+                    };
+                    // const response = await fetch('/api/fetch-news', {
+                    //     method: 'POST',
+                    //     headers: { 'Content-Type': 'application/json' },
+                    //     body: JSON.stringify({ queries: searchQueries, filters: filters }),
+                    // });
+                    // const data = await response.json(); // This data would contain actual summarized results
+
+                    // Dummy fetch to avoid URL parsing error in sandbox
+                    await fetch('https://jsonplaceholder.typicode.com/posts/1', { method: 'GET' });
+
+                    // --- Apply Filters to Simulated Results ---
+                    const filteredResults = simulatedResults.filter(item => {
+                        const itemDate = new Date(item.date);
+                        
+                        const matchesDate = (!filters.dateFrom || itemDate >= filters.dateFrom) &&
+                                            (!filters.dateUntil || itemDate <= filters.dateUntil);
+
+                        const matchesCategory = !filters.category || item.category.toLowerCase().includes(filters.category);
+
+                        const matchesCompany = !filters.companyProject || 
+                                               item.companies.some(company => company.toLowerCase().includes(filters.companyProject)) ||
+                                               item.title.toLowerCase().includes(filters.companyProject) ||
+                                               item.summary.toLowerCase().includes(filters.companyProject);
+                                               
+                        return matchesDate && matchesCategory && matchesCompany;
+                    });
+
+                    displayResults(filteredResults);
+
+                } catch (error) {
+                    console.error('Error fetching trends:', error);
+                    errorMessage.classList.remove('hidden');
+                    // Fallback to displaying all simulated results if filter logic causes an issue, or if fetch fails.
+                    // Or display an empty message if no filters matched, to avoid confusion.
+                    displayResults([]); // Display empty if there's a fetch error, prompting user to try again.
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                    fetchTrendsBtn.disabled = false; // Re-enable button
+                }
+            });
+
+            function displayResults(results) {
+                if (results && results.length > 0) {
+                    results.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date, newest first
+                    results.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'result-card p-4 rounded-xl shadow-md';
+                        card.innerHTML = `
+                            <h3 class="text-xl font-semibold mb-2">${item.title}</h3>
+                            <p class="mb-3">${item.summary}</p>
+                            <p class="text-sm mb-2 opacity-80">
+                                <span class="font-medium">Source:</span> 
+                                ${item.sourceUrl ? `<a href="${item.sourceUrl}" target="_blank" rel="noopener noreferrer" class="hover:underline">${item.source || 'N/A'}</a>` : item.source || 'N/A'} 
+                                (${item.date || 'N/A'})
+                            </p>
+                            <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="font-medium hover:underline">Read Original Article &rarr;</a>
+                        `;
+                        resultsContainer.appendChild(card);
+                    });
+                } else {
+                    resultsContainer.innerHTML = '<p class="text-center text-gray-400">No results found matching your filters. Try adjusting them!</p>';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
